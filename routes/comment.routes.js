@@ -13,8 +13,6 @@ router.post("/opinions/:opinionId/comments", isAuthenticated, (req, res, next) =
         authorComment: req.payload._id,
       };
 
-      console.log(addComment, "add comment")
-
       CommentModel.create(addComment)
         .then(newCommentId => {
           OpinionModel.findByIdAndUpdate(opinionId, {$push: {comments: newCommentId._id}}, {returnDocument: "after"})
