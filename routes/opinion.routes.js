@@ -3,12 +3,13 @@ const OpinionModel = require("../models/Opinion.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const fileUploader = require("../config/cloudinary.config");
 
-// This below codes are to test the upload route
-router.post("/upload", fileUploader.single("picture"), (req, res, next) => {
+// Adjusted file upload route for clarity and functionality
+router.post("/upload", fileUploader.single("media"), (req, res, next) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
   }
-  res.json({ picture: req.file.path });
+  // Assume req.file.path contains the URL for the uploaded media
+  res.json({ mediaUrl: req.file.path });
 }, (error, req, res, next) => {
   if (error) {
     console.error("Upload Error:", error);
@@ -16,31 +17,32 @@ router.post("/upload", fileUploader.single("picture"), (req, res, next) => {
   }
 });
 
-router.post("/opinions", isAuthenticated, fileUploader.single("picture"), (req, res, next) => {
-  const {picture, title, body} = req.body;
+
+router.post("/opinions", isAuthenticated, fileUploader.single("media"), (req, res, next) => {
+  const { title, body } = req.body;
+
+  // Extracting the media URL from the file uploaded
+  const mediaUrl = req.file ? req.file.path : '';
+  if (!mediaUrl) {
+    return res.status(400).json({ message: "Please provide a media file (photo or video)." });
+  }
 
   const newOpinion = {
     authorOpinion: req.payload._id,
-    picture: picture,
-    title: title,
-    body: body
+    mediaUrl, // Use mediaUrl instead of picture
+    title,
+    body
   };
-
-  if(picture === "") {
-    res.status(400).json({message: "Please provide a picture"});
-    return;
-  } 
 
   OpinionModel.create(newOpinion)
     .then(displayNewOpinion => res.json(displayNewOpinion))
-    .catch(e => {
-      console.log("error creating a new opinion", err);
+    .catch(err => {
+      console.error("Error creating a new opinion", err);
       res.status(500).json({
-        message: "error creating a new opinion",
-        error: e
+        message: "Error creating a new opinion",
+        error: err
       });
     });
-
 });
 
 router.get("/opinions", (req, res, next) => {
@@ -108,27 +110,29 @@ router.get("/opinions/:opinionId", (req, res, next) => {
     });
 });
 
-router.put("/opinions/:opinionId", isAuthenticated, fileUploader.single("picture"), (req, res, next) => {
+router.put("/opinions/:opinionId", isAuthenticated, fileUploader.single("media"), (req, res, next) => {
   const { opinionId } = req.params;
-  const { title, body, picture } = req.body;
+  const { title, body } = req.body;
+  
+  const updateOpinionBody = {};
+  if (title) updateOpinionBody.title = title;
+  if (body) updateOpinionBody.body = body;
 
-  // Construct the update object
-  const updateOpinionBody = {
-    ...(title && { title }),
-    ...(body && { body }),
-    ...(picture && { picture })
-  };
+  if (req.file) {
+    updateOpinionBody.mediaUrl = req.file.path;
+  }
 
-  OpinionModel.findByIdAndUpdate(opinionId, updateOpinionBody, {new: true})
-    .then(updateOpinion => res.json(updateOpinion))
+  OpinionModel.findByIdAndUpdate(opinionId, updateOpinionBody, { new: true })
+    .then(updatedOpinion => res.json(updatedOpinion))
     .catch(e => {
-      console.log("error updating the opinion")
+      console.error("Error updating the opinion:", e);
       res.status(500).json({
-        message: "error updating the opinion",
+        message: "Error updating the opinion",
         error: e
       });
     });
 });
+
 
 router.delete("/opinions/:opinionId", isAuthenticated, (req, res, next) => {
   const { opinionId } = req.params;

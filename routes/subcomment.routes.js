@@ -11,7 +11,7 @@ router.post("/comments/:commentId/subcomments", isAuthenticated, (req, res, next
       const addSubcomment = {
         bodySubcomment: req.body.bodySubcomment,
         authorSubcomment: req.payload._id
-      }
+      };
 
       SubcommentModel.create(addSubcomment)
         .then(newSubcommentId => {
@@ -25,6 +25,64 @@ router.post("/comments/:commentId/subcomments", isAuthenticated, (req, res, next
               });
             });
         });
+    });
+});
+
+router.get("/subcomments", (req, res, next) => {
+  SubcommentModel.find()
+    .then(gettingSubcomments => res.json(gettingSubcomments))
+    .catch(e => {
+      console.log("error getting subcomments", e)
+      res.status(500).json({
+        message: "error getting subcomments",
+        error: e
+      });
+    });
+});
+
+router.get("/subcomments/:subcommentId", (req, res, next) => {
+  const {subcommentId} = req.params;
+
+  SubcommentModel.findById(subcommentId)
+    .then(gettingSubcommentId => res.json(gettingSubcommentId))
+    .catch(e => {
+      console.log("error getting subcomment", e)
+      res.status(500).json({
+        message: "error getting subcomment",
+        error: e
+      });
+    });
+});
+
+router.put("/subcomments/:subcommentId", isAuthenticated, (req, res, next) => {
+  const {subcommentId} = req.params;
+
+  const updateSubcommentId = {
+    bodySubcomment: req.body.bodySubcomment
+  };
+
+  SubcommentModel.findByIdAndUpdate(subcommentId, updateSubcommentId, {new: true})
+    .then(updateSubcommentIdResult => res.json(updateSubcommentIdResult))
+    .catch(e => {
+      console.log("error updating the subcomment")
+      res.status(500).json({
+        message: "error updating subcomment",
+        error: e
+      });
+    });
+});
+
+router.delete("/subcomments/:subcommentId", isAuthenticated, (req, res, next) => {
+  const {subcommentId} = req.params;
+
+  SubcommentModel.findByIdAndDelete(subcommentId)
+    .then(subcommentId => res.json({message: "success deleting", subcommentId}))
+    .catch(e => {
+      console.log("error deleting subcomment id")
+      res.status(500).json({
+        message: "error deleting the subcomment Id",
+        error: e
+      });
     });
 });
 
