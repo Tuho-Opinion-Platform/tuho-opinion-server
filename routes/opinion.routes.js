@@ -17,7 +17,6 @@ router.post("/upload", fileUploader.single("media"), (req, res, next) => {
   }
 });
 
-
 router.post("/opinions", isAuthenticated, fileUploader.single("media"), (req, res, next) => {
   const { title, body } = req.body;
 
@@ -113,7 +112,7 @@ router.get("/opinions/:opinionId", (req, res, next) => {
 router.put("/opinions/:opinionId", isAuthenticated, fileUploader.single("media"), (req, res, next) => {
   const { opinionId } = req.params;
   const { title, body } = req.body;
-  
+
   const updateOpinionBody = {};
   if (title) updateOpinionBody.title = title;
   if (body) updateOpinionBody.body = body;
